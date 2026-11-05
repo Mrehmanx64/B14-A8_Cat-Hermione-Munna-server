@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { collections } from "../config/db.js";
 import { requireAuth } from "../middleware/auth.js";
-import { HttpError, asyncHandler } from "../utils/helpers.js";
+import { asyncHandler } from "../utils/helpers.js";
+import { validateProfile } from "../middleware/validateProfile.js";
 
 const router = Router();
 
@@ -15,31 +16,8 @@ const router = Router();
 router.patch(
   "/",
   requireAuth,
+  validateProfile,
   asyncHandler(async (req, res) => {
-    const { name, image } = req.body ?? {};
-    const errors = {};
-
-    if (name !== undefined) {
-      const value = String(name).trim();
-      if (value.length < 2) errors.name = "Name must be at least 2 characters.";
-      if (value.length > 60) errors.name = "Name must be 60 characters or fewer.";
-    }
-
-    if (image !== undefined && String(image).trim() !== "") {
-      try {
-        const url = new URL(String(image).trim());
-        if (!["http:", "https:"].includes(url.protocol)) {
-          errors.image = "Profile photo must be a valid http(s) URL.";
-        }
-      } catch {
-        errors.image = "Profile photo must be a valid http(s) URL.";
-      }
-    }
-
-    if (Object.keys(errors).length) {
-      throw new HttpError(422, "Please fix the highlighted fields.", errors);
-    }
-
     res.json({ ok: true });
   })
 );
