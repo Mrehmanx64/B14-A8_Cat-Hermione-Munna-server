@@ -4,6 +4,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/helpers.js";
 import { sendSuccess } from "../utils/response.js";
 import { validateProfile } from "../middleware/validateProfile.js";
+import { getUserStats } from "../services/userService.js";
 
 const router = Router();
 
@@ -31,12 +32,8 @@ router.get(
   "/stats",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const [created, joined] = await Promise.all([
-      collections.events().countDocuments({ createdBy: req.auth.sub }),
-      collections.joins().countDocuments({ userId: req.auth.sub }),
-    ]);
-
-    sendSuccess(res, { created, joined });
+    const stats = await getUserStats(req.auth.sub);
+    sendSuccess(res, stats);
   })
 );
 
