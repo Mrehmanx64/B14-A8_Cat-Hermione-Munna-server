@@ -1,11 +1,15 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import morgan from "morgan";
+import helmet from "helmet";
 import { connectDb, closeDb } from "./config/db.js";
 import eventsRouter from "./routes/events.js";
 import profileRouter from "./routes/profile.js";
 
 const app = express();
+app.use(helmet());
+app.use(morgan("dev"));
 const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:3000")
