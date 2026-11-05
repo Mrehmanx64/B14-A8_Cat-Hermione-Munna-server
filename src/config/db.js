@@ -4,7 +4,15 @@ let client;
 let db;
 
 export async function connectDb() {
-  if (db) return db;
+  if (db) {
+    try {
+      await client.db("admin").command({ ping: 1 });
+      return db;
+    } catch {
+      console.warn("[db] connection lost, reconnecting...");
+      db = null;
+    }
+  }
 
   const uri = process.env.MONGODB_URI;
   if (!uri || uri.includes("<<<")) {
