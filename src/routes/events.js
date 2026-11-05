@@ -8,14 +8,7 @@ import { validateEventInput } from "../services/validationService.js";
 
 const router = Router();
 
-/** Converts a Mongo document into the JSON shape the client expects. */
-const serialize = (doc, extra = {}) => ({
-  ...doc,
-  _id: doc._id.toString(),
-  createdAt: doc.createdAt?.toISOString?.() ?? doc.createdAt,
-  updatedAt: doc.updatedAt?.toISOString?.() ?? doc.updatedAt,
-  ...extra,
-});
+import { serializeEvent } from "../utils/serialization.js";
 
 const toId = (id) => {
   if (!ObjectId.isValid(id)) throw new HttpError(400, "That event id is not valid.");
@@ -43,7 +36,7 @@ router.get(
 
     res.json(
       events.map((e) =>
-        serialize(e, { joinCount: counts.get(e._id.toString()) ?? 0 })
+        serializeEvent(e, { joinCount: counts.get(e._id.toString()) ?? 0 })
       )
     );
   })
@@ -66,7 +59,7 @@ router.get(
     const counts = await getJoinCounts(events.map((e) => e._id));
     res.json(
       events.map((e) =>
-        serialize(e, { joinCount: counts.get(e._id.toString()) ?? 0 })
+        serializeEvent(e, { joinCount: counts.get(e._id.toString()) ?? 0 })
       )
     );
   })
@@ -99,7 +92,7 @@ router.get(
       .map((j) => byId.get(j.eventId))
       .filter(Boolean)
       .map((e) =>
-        serialize(e, {
+        serializeEvent(e, {
           joinCount: counts.get(e._id.toString()) ?? 0,
           joinedAt: joins.find((j) => j.eventId === e._id.toString())?.joinedAt,
         })
@@ -132,7 +125,7 @@ router.get(
       : false;
 
     res.json(
-      serialize(event, {
+      serializeEvent(event, {
         joinCount: count,
         joined,
         isOwner: req.auth ? event.createdBy === req.auth.sub : false,
@@ -169,7 +162,7 @@ router.post(
     const { insertedId } = await collections.events().insertOne(doc);
     res
       .status(201)
-      .json(serialize({ ...doc, _id: insertedId }, { joinCount: 0, joined: false, isOwner: true }));
+      .json(serializeEvent({ ...doc, _id: insertedId }, { joinCount: 0, joined: false, isOwner: true }));
   })
 );
 
@@ -204,7 +197,7 @@ router.patch(
     const updated = await collections.events().findOne({ _id });
 
     const count = await collections.joins().countDocuments({ eventId: req.params.id });
-    res.json(serialize(updated, { joinCount: count, isOwner: true }));
+    res.json(serializeEvent(updated, { joinCount: count, isOwner: true }));
   })
 );
 
