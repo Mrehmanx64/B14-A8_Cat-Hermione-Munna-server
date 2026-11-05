@@ -2,6 +2,7 @@ import { Router } from "express";
 import { collections } from "../config/db.js";
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../utils/helpers.js";
+import { sendSuccess } from "../utils/response.js";
 import { validateProfile } from "../middleware/validateProfile.js";
 
 const router = Router();
@@ -18,7 +19,7 @@ router.patch(
   requireAuth,
   validateProfile,
   asyncHandler(async (req, res) => {
-    res.json({ ok: true });
+    sendSuccess(res, { ok: true });
   })
 );
 
@@ -35,7 +36,7 @@ router.get(
       collections.joins().countDocuments({ userId: req.auth.sub }),
     ]);
 
-    res.json({ created, joined });
+    sendSuccess(res, { created, joined });
   })
 );
 
