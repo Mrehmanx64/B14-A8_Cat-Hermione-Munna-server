@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
-import { connectDb, closeDb } from "./config/db.js";
+import { errorHandler } from "./middleware/errorHandler.js";
 import eventsRouter from "./routes/events.js";
 import profileRouter from "./routes/profile.js";
 
@@ -43,23 +43,7 @@ app.use((req, res) => {
   res.status(404).json({ message: `No route for ${req.method} ${req.originalUrl}.` });
 });
 
-// Central error handler: turns thrown HttpErrors into clean JSON envelopes.
-app.use((err, _req, res, _next) => {
-  const status = err.status || 500;
-
-  if (status >= 500) {
-    console.error("[error]", err);
-  }
-
-  if (err.message?.includes("not allowed by CORS")) {
-    return res.status(403).json({ message: "This origin is not allowed to call the API." });
-  }
-
-  res.status(status).json({
-    message: err.message || "Something went wrong on our side.",
-    ...(err.details ? { errors: err.details } : {}),
-  });
-});
+app.use(errorHandler);
 
 async function start() {
   try {
