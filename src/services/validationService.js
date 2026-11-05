@@ -1,11 +1,26 @@
-import { HttpError } from "../utils/helpers.js";
+export function validateProfileInput(body) {
+  const errors = {};
+  const { name, image } = body ?? {};
 
-/**
- * Validates event input data.
- * @param {Object} body The request body.
- * @param {Object} options Options like partial update.
- * @returns {Object} An object of errors, empty if valid.
- */
+  if (name !== undefined) {
+    const value = String(name).trim();
+    if (value.length < 2) errors.name = "Name must be at least 2 characters.";
+    if (value.length > 60) errors.name = "Name must be 60 characters or fewer.";
+  }
+
+  if (image !== undefined && String(image).trim() !== "") {
+    try {
+      const url = new URL(String(image).trim());
+      if (!["http:", "https:"].includes(url.protocol)) {
+        errors.image = "Profile photo must be a valid http(s) URL.";
+      }
+    } catch {
+      errors.image = "Profile photo must be a valid http(s) URL.";
+    }
+  }
+  return errors;
+}
+
 export function validateEventInput(body, { partial = false } = {}) {
   const errors = {};
   const str = (v) => (typeof v === "string" ? v.trim() : "");
@@ -28,10 +43,10 @@ export function validateEventInput(body, { partial = false } = {}) {
     try {
       const url = new URL(str(body.thumbnail));
       if (!["http:", "https:"].includes(url.protocol)) {
-        errors.thumbnail = "Thumbnail must be a valid http(s) image URL.";
+        errors.thumbnail = "Thumbnail must be a valid http(s) URL.";
       }
     } catch {
-      errors.thumbnail = "Thumbnail must be a valid http(s) image URL.";
+      errors.thumbnail = "Thumbnail must be a valid http(s) URL.";
     }
   }
 
