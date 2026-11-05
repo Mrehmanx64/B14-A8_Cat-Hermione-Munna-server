@@ -3,14 +3,8 @@ import { ObjectId } from "mongodb";
 import { collections } from "../config/db.js";
 import { getJoinCounts } from "../services/eventService.js";
 import { optionalAuth, requireAuth } from "../middleware/auth.js";
-import {
-  HttpError,
-  asyncHandler,
-  toEventDate,
-  todayEventDate,
-  upcomingLowerBound,
-  validateEventInput,
-} from "../utils/helpers.js";
+import { validateEvent } from "../middleware/validateEvent.js";
+import { validateEventInput } from "../services/validationService.js";
 
 const router = Router();
 
@@ -154,12 +148,8 @@ router.get(
 router.post(
   "/",
   requireAuth,
+  validateEvent(false),
   asyncHandler(async (req, res) => {
-    const errors = validateEventInput(req.body);
-    if (Object.keys(errors).length) {
-      throw new HttpError(422, "Please fix the highlighted fields.", errors);
-    }
-
     const now = new Date();
     const doc = {
       title: req.body.title.trim(),
