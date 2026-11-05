@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
 import { collections } from "../config/db.js";
+import { getJoinCounts } from "../services/eventService.js";
 import { optionalAuth, requireAuth } from "../middleware/auth.js";
 import {
   HttpError,
@@ -44,7 +45,7 @@ router.get(
       .limit(limit)
       .toArray();
 
-    const counts = await joinCounts(events.map((e) => e._id));
+    const counts = await getJoinCounts(events.map((e) => e._id));
 
     res.json(
       events.map((e) =>
@@ -68,7 +69,7 @@ router.get(
       .sort({ createdAt: -1 })
       .toArray();
 
-    const counts = await joinCounts(events.map((e) => e._id));
+    const counts = await getJoinCounts(events.map((e) => e._id));
     res.json(
       events.map((e) =>
         serialize(e, { joinCount: counts.get(e._id.toString()) ?? 0 })
@@ -98,7 +99,7 @@ router.get(
     const events = await collections.events().find({ _id: { $in: ids } }).toArray();
     const byId = new Map(events.map((e) => [e._id.toString(), e]));
 
-    const counts = await joinCounts(events.map((e) => e._id));
+    const counts = await getJoinCounts(events.map((e) => e._id));
 
     const ordered = joins
       .map((j) => byId.get(j.eventId))
@@ -281,19 +282,5 @@ router.post(
     res.status(201).json({ joined: true, alreadyJoined: false, joinCount: count });
   })
 );
-
-/** Groups join counts by event id for a set of event ids. */
-async function joinCounts(ids) {
-  if (!ids.length) return new Map();
-  const rows = await collections
-    .joins()
-    .aggregate([
-      { $match: { eventId: { $in: ids.map((id) => id.toString()) } } },
-      { $group: { _id: "$eventId", count: { $sum: 1 } } },
-    ])
-    .toArray();
-
-  return new Map(rows.map((r) => [r._id, r.count]));
-}
 
 export default router;
